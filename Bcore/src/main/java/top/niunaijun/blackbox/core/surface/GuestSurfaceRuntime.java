@@ -48,8 +48,9 @@ public final class GuestSurfaceRuntime {
             return;
         }
 
-        IBinder hostToken = intent.getIBinderExtra(EXTRA_HOST_TOKEN);
-        IBinder callbackBinder = intent.getIBinderExtra(EXTRA_CALLBACK);
+        Bundle launchExtras = intent.getExtras();
+        IBinder hostToken = launchExtras == null ? null : launchExtras.getBinder(EXTRA_HOST_TOKEN);
+        IBinder callbackBinder = launchExtras == null ? null : launchExtras.getBinder(EXTRA_CALLBACK);
         final IGuestSurfaceCallback callback =
                 IGuestSurfaceCallback.Stub.asInterface(callbackBinder);
         int width = intent.getIntExtra(EXTRA_WIDTH, 0);
