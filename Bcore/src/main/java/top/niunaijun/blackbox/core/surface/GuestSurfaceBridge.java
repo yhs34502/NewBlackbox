@@ -59,6 +59,7 @@ public final class GuestSurfaceBridge implements AutoCloseable {
      */
     public static GuestSurfaceBridge attach(
             Activity activity,
+            Display hostDisplay,
             IBinder hostToken,
             int widthPx,
             int heightPx,
@@ -67,8 +68,8 @@ public final class GuestSurfaceBridge implements AutoCloseable {
             throw new UnsupportedOperationException(
                     "Embedded guest surfaces require Android 11 (API 30) or later.");
         }
-        if (activity == null || hostToken == null || listener == null) {
-            throw new IllegalArgumentException("activity, hostToken and listener are required");
+        if (activity == null || hostDisplay == null || hostToken == null || listener == null) {
+            throw new IllegalArgumentException("activity, hostDisplay, hostToken and listener are required");
         }
         if (widthPx <= 0 || heightPx <= 0) {
             throw new IllegalArgumentException("Surface dimensions must be positive");
@@ -83,11 +84,6 @@ public final class GuestSurfaceBridge implements AutoCloseable {
         if (originalContent.getChildCount() == 0) {
             throw new IllegalStateException(
                     "Activity content is empty; attach after setContentView has completed");
-        }
-
-        Display display = activity.getDisplay();
-        if (display == null) {
-            throw new IllegalStateException("Guest Activity has no attached display");
         }
 
         FrameLayout hostedContent = new FrameLayout(activity);
@@ -109,7 +105,7 @@ public final class GuestSurfaceBridge implements AutoCloseable {
 
         SurfaceControlViewHost surfaceHost = null;
         try {
-            surfaceHost = new SurfaceControlViewHost(activity, display, hostToken);
+            surfaceHost = new SurfaceControlViewHost(activity, hostDisplay, hostToken);
             surfaceHost.setView(hostedContent, widthPx, heightPx);
             SurfaceControlViewHost.SurfacePackage surfacePackage =
                     surfaceHost.getSurfacePackage();
