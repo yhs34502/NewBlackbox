@@ -122,7 +122,7 @@ public final class GuestSurfaceBridge implements AutoCloseable {
             bridge.originalChildren.addAll(children);
             listener.onSurfacePackageReady(surfacePackage);
             return bridge;
-        } catch (Throwable error) {
+        } catch (RuntimeException | Error error) {
             if (surfaceHost != null) {
                 surfaceHost.release();
             }
