@@ -1,11 +1,13 @@
 package top.niunaijun.blackbox.core.surface;
 
 import android.app.Activity;
+import android.hardware.display.DisplayManager;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.view.Display;
 import android.view.SurfaceControlViewHost;
 
 import java.util.Collections;
@@ -30,6 +32,8 @@ public final class GuestSurfaceRuntime {
             "top.niunaijun.blackbox.extra.SURFACE_WIDTH";
     public static final String EXTRA_HEIGHT =
             "top.niunaijun.blackbox.extra.SURFACE_HEIGHT";
+    public static final String EXTRA_DISPLAY_ID =
+            "top.niunaijun.blackbox.extra.DISPLAY_ID";
     public static final String RESULT_SURFACE_PACKAGE = "surface_package";
 
     private static final Map<Activity, GuestSurfaceBridge> BRIDGES =
@@ -55,15 +59,20 @@ public final class GuestSurfaceRuntime {
                 IGuestSurfaceCallback.Stub.asInterface(callbackBinder);
         int width = intent.getIntExtra(EXTRA_WIDTH, 0);
         int height = intent.getIntExtra(EXTRA_HEIGHT, 0);
+        int displayId = intent.getIntExtra(EXTRA_DISPLAY_ID, Display.INVALID_DISPLAY);
+        DisplayManager displayManager =
+                (DisplayManager) activity.getSystemService(Activity.DISPLAY_SERVICE);
+        Display hostDisplay = displayManager == null ? null : displayManager.getDisplay(displayId);
 
-        if (hostToken == null || callback == null || width <= 0 || height <= 0) {
+        if (hostToken == null || callback == null || hostDisplay == null
+                || width <= 0 || height <= 0) {
             notifyError(callback, "Embedded surface launch configuration is incomplete");
             return;
         }
 
         try {
             GuestSurfaceBridge bridge = GuestSurfaceBridge.attach(
-                    activity, hostToken, width, height,
+                    activity, hostDisplay, hostToken, width, height,
                     surfacePackage -> {
                         Bundle result = new Bundle();
                         result.putParcelable(RESULT_SURFACE_PACKAGE, surfacePackage);
