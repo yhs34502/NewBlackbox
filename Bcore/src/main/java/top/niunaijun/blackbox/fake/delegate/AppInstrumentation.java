@@ -138,7 +138,6 @@ public final class AppInstrumentation extends BaseInstrumentationDelegate implem
     }
 
     @Override
-    @Override
     public void callActivityOnDestroy(Activity activity) {
         try {
             GuestSurfaceRuntime.onActivityDestroyed(activity);
