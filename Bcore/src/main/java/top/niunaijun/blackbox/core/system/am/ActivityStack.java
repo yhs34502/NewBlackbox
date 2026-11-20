@@ -139,7 +139,7 @@ public class ActivityStack {
 
         
         if (taskRecord == null || taskRecord.needNewTask()) {
-            return startActivityInNewTaskLocked(userId, intent, activityInfo, resultTo, launchModeFlags);
+            return startActivityInNewTaskLocked(userId, intent, activityInfo, resultTo, launchModeFlags, options);
         }
         
         mAms.moveTaskToFront(taskRecord.id, 0);
@@ -276,8 +276,7 @@ public class ActivityStack {
         return getStartStubActivityIntentInner(intent, targetApp.bpid, userId, stubRecord, info);
     }
 
-    private int startActivityInNewTaskLocked(int userId, Intent intent, ActivityInfo
-            activityInfo, IBinder resultTo, int launchMode) {
+    private int startActivityInNewTaskLocked(int userId, Intent intent, ActivityInfo activityInfo, IBinder resultTo, int launchMode, Bundle options) {
         ActivityRecord record = newActivityRecord(intent, activityInfo, resultTo, userId);
         Intent shadow = startActivityProcess(userId, intent, activityInfo, record);
 
@@ -286,7 +285,11 @@ public class ActivityStack {
         shadow.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         shadow.addFlags(launchMode);
 
-        BlackBoxCore.getContext().startActivity(shadow);
+        if (options != null) {
+            BlackBoxCore.getContext().startActivity(shadow, options);
+        } else {
+            BlackBoxCore.getContext().startActivity(shadow);
+        }
         return 0;
     }
 
