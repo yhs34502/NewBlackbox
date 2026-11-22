@@ -22,6 +22,25 @@ At the pinned revision:
 
 This is a process/package virtualization layer with Android's normal Activity/window launch path, not an embedded Activity runtime.
 
+## Stage 0 — SurfaceView embedding plumbing
+
+An isolated helper was added at
+`Bcore/src/main/java/top/niunaijun/blackbox/surface/SurfaceViewEmbedder.java`.
+
+It attempts to:
+1. Require an attached, measured host `SurfaceView` with a valid display and host token.
+2. Create a real `SurfaceControlViewHost` on that display.
+3. Invoke the platform `setView(View, int, int)` entry point and obtain a `SurfacePackage`.
+4. Attach that package to the host `SurfaceView`, with an explicit close path.
+
+Important limits:
+- This helper embeds an ordinary supplied `View`; it does **not** embed a Guest Activity.
+- The `setView(View, int, int)` entry point is accessed reflectively because it is not part of the normal public SDK surface in the targeted SDK. Android 14 hidden-API enforcement may reject it.
+- No host Activity/demo screen has been wired yet.
+- This change has not been compiled or run on a device. It is a probe, not a passing result.
+
+Stage 0 passes only after a build and a device test show a real View rendered inside the host SurfaceView, with no separate top-level window. Even then, Gate A still requires replacing the supplied View with the actual Guest Activity decor and proving Activity window/lifecycle ownership.
+
 ## POC architecture to prove
 
 The work is split into explicit proof gates. Do not connect this runtime to Mereview's production Clone/MereviewSpace routes until every gate passes.
