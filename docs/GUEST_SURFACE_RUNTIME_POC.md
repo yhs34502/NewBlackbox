@@ -71,26 +71,26 @@ windowless guest Activity attach path, then prove the real guest Activity decor
 renders inside the host SurfaceView. A normal Activity launch or a synthetic View
 does not pass that gate.
 
-## Stage 2 — Windowless host construction probe
+## Stage 2 — Safe host-token SurfaceControlViewHost probe
 
-Added `WindowlessHostProbeActivity` at
-`app/src/main/java/top/niunaijun/blackboxa/view/surface/WindowlessHostProbeActivity.kt`
-and registered action
-`top.niunaijun.blackbox.action.WINDOWLESS_HOST_PROBE`.
+The initial WWM-backed implementation of this probe has been retired after three
+SurfaceFlinger stack-overflow crashes on the Samsung SM-A528B. See
+`Stage-2 incident review` below.
 
-This probe uses the Android 14 API signatures observed on the Samsung SM-A528B:
-1. Reads the host SurfaceView Display, host Binder token and its SurfaceControl.
-2. Reflectively constructs `WindowlessWindowManager(Configuration, SurfaceControl, IBinder)`.
-3. Constructs `SurfaceControlViewHost(Context, Display, WindowlessWindowManager, String)`.
-4. Calls `setView(View, int, int)`, obtains the SurfacePackage, and attempts to attach it to the host SurfaceView.
-5. Displays a step-by-step PASS/FAIL report and releases the SurfaceControlViewHost when the host surface is destroyed.
+The current `WindowlessHostProbeActivity` deliberately uses
+`SurfaceControlViewHost(Context, Display, hostToken)`. It does not construct a
+`WindowlessWindowManager`, access `SurfaceView.surfaceControl`, or provide an
+explicit SurfaceControl parent. The host-token constructor lets Android manage
+the window/surface parent relationship.
 
-This remains a synthetic View probe. It does not instantiate or attach a Guest Activity. In particular, successful construction is not sufficient: the device test must show the embedded content and confirm the touch button responds. Hidden-API enforcement, invalid SurfaceControl parenting, or SurfacePackage attachment may still fail on the target firmware.
+The probe then reflectively invokes `setView(View, int, int)`, obtains the
+`SurfacePackage`, and attaches it to the host SurfaceView. It remains a
+synthetic View test, not a Guest Activity test. Even this safer path is pending
+a fresh build and one controlled device test; stop immediately if any system
+process crashes.
 
-Manual launch:
+Manual launch (only from a newly built APK containing the safe host-token code):
 `adb shell am start -n <host.package>/top.niunaijun.blackboxa.view.surface.WindowlessHostProbeActivity`
-
-Collect the on-screen report or Logcat tag `WindowlessHostProbe`. The first failing step and full exception determine the next adapter change. Do not proceed to Activity.attach integration until this probe demonstrates a visible, touch-responsive View.
 
 ## POC architecture to prove
 
