@@ -34,6 +34,10 @@ import java.lang.reflect.InvocationTargetException
 class WindowlessHostProbeActivity : Activity(), SurfaceHolder.Callback {
     private lateinit var hostSurface: SurfaceView
     private lateinit var reportView: TextView
+    private lateinit var reportPanel: FrameLayout
+    private lateinit var reportScroll: ScrollView
+    private lateinit var reportToggle: TextView
+    private var reportExpanded = false
     private var viewHost: SurfaceControlViewHost? = null
     private var surfacePackage: SurfaceControlViewHost.SurfacePackage? = null
     private var started = false
@@ -58,11 +62,43 @@ class WindowlessHostProbeActivity : Activity(), SurfaceHolder.Callback {
                 FrameLayout.LayoutParams.MATCH_PARENT
             )
         )
+        reportScroll = ScrollView(this).apply {
+            addView(reportView)
+            visibility = View.GONE
+        }
+        reportToggle = TextView(this).apply {
+            text = "Show Log"
+            textSize = 14f
+            setTextColor(Color.WHITE)
+            setBackgroundColor(0xEE263238.toInt())
+            gravity = Gravity.CENTER
+            setPadding(18, 10, 18, 10)
+            setOnClickListener { setReportExpanded(!reportExpanded) }
+        }
+        reportPanel = FrameLayout(this).apply {
+            setBackgroundColor(0xDD101820.toInt())
+            addView(
+                reportScroll,
+                FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    dp(172),
+                    Gravity.TOP
+                ).apply { topMargin = dp(48) }
+            )
+            addView(
+                reportToggle,
+                FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.WRAP_CONTENT,
+                    dp(44),
+                    Gravity.TOP or Gravity.END
+                )
+            )
+        }
         root.addView(
-            ScrollView(this).apply { addView(reportView) },
+            reportPanel,
             FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT,
+                dp(48),
                 Gravity.TOP
             )
         )
@@ -178,6 +214,18 @@ class WindowlessHostProbeActivity : Activity(), SurfaceHolder.Callback {
             releaseProbe()
         }
     }
+
+    private fun setReportExpanded(expanded: Boolean) {
+        reportExpanded = expanded
+        reportScroll.visibility = if (expanded) View.VISIBLE else View.GONE
+        reportToggle.text = if (expanded) "Hide Log" else "Show Log"
+        reportPanel.layoutParams = reportPanel.layoutParams.apply {
+            height = dp(if (expanded) 220 else 48)
+        }
+    }
+
+    private fun dp(value: Int): Int =
+        (value * resources.displayMetrics.density).toInt()
 
     private fun append(line: String) {
         Log.i(TAG, line)
