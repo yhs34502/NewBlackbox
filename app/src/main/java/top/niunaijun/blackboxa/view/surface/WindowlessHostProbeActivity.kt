@@ -174,13 +174,12 @@ class WindowlessHostProbeActivity : Activity(), SurfaceHolder.Callback {
             val button = Button(this).apply {
                 text = "Tap to verify input"
                 setOnClickListener {
-                    // Do not replace the Button's text during the embedded-window
-                    // focus transition; that path coincided with a TextView Editor
-                    // drawing crash on the test device. Disable it as the visual
-                    // acknowledgement and record the event in the log instead.
-                    isEnabled = false
+                    // Keep this callback deliberately minimal. Updating a second
+                    // TextView in the host Activity from an embedded-window input
+                    // callback coincided with repeat input ANRs on the test device.
+                    // A visual-only alpha change lets us isolate input dispatch
+                    // without cross-window UI work or an enabled-state transition.
                     alpha = 0.65f
-                    append("PASS: embedded View received touch")
                 }
             }
             content.addView(
