@@ -45,6 +45,32 @@ Important limits:
 
 Stage 0 passes only after a build and a device test show a real View rendered inside the host SurfaceView, with no separate top-level window. Even then, Gate A still requires replacing the supplied View with the actual Guest Activity decor and proving Activity window/lifecycle ownership.
 
+## Stage 1 — Guest window API inventory
+
+Added `GuestWindowApiProbeActivity` at
+`app/src/main/java/top/niunaijun/blackboxa/view/surface/GuestWindowApiProbeActivity.kt`
+and registered action
+`top.niunaijun.blackbox.action.GUEST_WINDOW_API_PROBE`.
+
+This diagnostic reports the device's declarations for:
+- `WindowlessWindowManager` constructors and relevant methods
+- `SurfaceControlViewHost` constructors and relevant methods
+- `Window` window/attachment methods
+- the platform `Activity.attach(...)` signature
+
+It is deliberately read-only. It does not instantiate an Activity, call hidden APIs,
+or claim that a guest window has been embedded. Its output is needed before writing
+an Android-version-specific attachment adapter; guessing the private
+`Activity.attach` signature would make the next prototype unsafe and brittle.
+
+Manual launch on a test device:
+`adb shell am start -n <host.package>/top.niunaijun.blackboxa.view.surface.GuestWindowApiProbeActivity`
+
+The next implementation gate is to use the captured API inventory to design a
+windowless guest Activity attach path, then prove the real guest Activity decor
+renders inside the host SurfaceView. A normal Activity launch or a synthetic View
+does not pass that gate.
+
 ## POC architecture to prove
 
 The work is split into explicit proof gates. Do not connect this runtime to Mereview's production Clone/MereviewSpace routes until every gate passes.
