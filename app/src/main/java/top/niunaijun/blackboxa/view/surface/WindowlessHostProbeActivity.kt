@@ -52,7 +52,11 @@ class WindowlessHostProbeActivity : Activity(), SurfaceHolder.Callback {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
         }
-        hostSurface = SurfaceView(this)
+        hostSurface = SurfaceView(this).apply {
+            // Android requires the embedding SurfaceView to be above its host
+            // Surface for a child SurfacePackage to receive input events.
+            setZOrderOnTop(true)
+        }
         reportView = TextView(this).apply {
             textSize = 12f
             setTextColor(Color.WHITE)
