@@ -17,8 +17,6 @@ import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.ScrollView
 import android.widget.TextView
-import java.lang.reflect.Constructor
-import java.lang.reflect.Method
 
 /**
  * Stage-2 experiment: instantiate WindowlessWindowManager and use it as the
@@ -183,10 +181,6 @@ class WindowlessHostProbeActivity : Activity(), SurfaceHolder.Callback {
     }
 
     private fun releaseProbe() {
-        try {
-            hostSurface.setChildSurfacePackage(null)
-        } catch (_: Throwable) {
-        }
         surfacePackage = null
         viewHost?.release()
         viewHost = null
