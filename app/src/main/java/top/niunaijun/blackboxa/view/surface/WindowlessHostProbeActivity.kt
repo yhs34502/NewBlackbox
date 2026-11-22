@@ -62,7 +62,8 @@ class WindowlessHostProbeActivity : Activity(), SurfaceHolder.Callback {
             setTextColor(Color.WHITE)
             setBackgroundColor(0xDD101820.toInt())
             setPadding(18, 14, 18, 14)
-            setTextIsSelectable(true)
+            // Keep this diagnostic TextView non-selectable. On Samsung Android 14,
+            // selectable TextView's Editor drawing crashed after its text was refreshed.
         }
         reportScroll = ScrollView(this).apply {
             addView(reportView)
@@ -173,7 +174,12 @@ class WindowlessHostProbeActivity : Activity(), SurfaceHolder.Callback {
             val button = Button(this).apply {
                 text = "Tap to verify input"
                 setOnClickListener {
-                    text = "Touch received"
+                    // Do not replace the Button's text during the embedded-window
+                    // focus transition; that path coincided with a TextView Editor
+                    // drawing crash on the test device. Disable it as the visual
+                    // acknowledgement and record the event in the log instead.
+                    isEnabled = false
+                    alpha = 0.65f
                     append("PASS: embedded View received touch")
                 }
             }
