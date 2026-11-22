@@ -9,7 +9,7 @@ import android.os.Looper
 import android.view.SurfaceControlViewHost
 import android.widget.ScrollView
 import android.widget.TextView
-import android.window.TaskFragmentOrganizer
+import java.util.concurrent.Executor
 
 /**
  * Platform capability inventory for a future Guest Activity embedding path.
@@ -109,27 +109,39 @@ class GuestWindowApiProbeActivity : Activity() {
 
     /**
      * The no-argument registration is distinct from privileged system-organizer
-     * registration. Test only register/unregister; do not create or move tasks.
+     * registration. Reflection is used because TaskFragmentOrganizer is present
+     * on the device but is not exposed by this project's compile SDK stubs.
+     * Test only register/unregister; do not create or move tasks.
      */
     private fun StringBuilder.inspectRegularOrganizerRegistration() {
         appendLine("=== NON-SYSTEM TASKFRAGMENT ORGANIZER REGISTRATION ===")
-        var organizer: TaskFragmentOrganizer? = null
+        var organizer: Any? = null
+        var unregisterMethod: java.lang.reflect.Method? = null
         try {
-            organizer = TaskFragmentOrganizer(
-                java.util.concurrent.Executor { command ->
-                    Handler(Looper.getMainLooper()).post(command)
-                }
-            )
-            organizer.registerOrganizer()
+            val organizerClass = Class.forName("android.window.TaskFragmentOrganizer")
+            val executor = Executor { command ->
+                Handler(Looper.getMainLooper()).post(command)
+            }
+            val constructor = organizerClass.getConstructor(Executor::class.java)
+            organizer = constructor.newInstance(executor)
+            val registerMethod = organizerClass.getMethod("registerOrganizer")
+            unregisterMethod = organizerClass.getMethod("unregisterOrganizer")
+
+            registerMethod.invoke(organizer)
             appendLine("registerOrganizer(): PASS")
-            organizer.unregisterOrganizer()
+            unregisterMethod.invoke(organizer)
             appendLine("unregisterOrganizer(): PASS")
             appendLine("No TaskFragment was created and no Activity was moved.")
         } catch (t: Throwable) {
+            val cause = (t as? java.lang.reflect.InvocationTargetException)?.targetException ?: t
             appendLine("REGISTRATION: FAIL")
-            appendLine("ERROR: ${t.javaClass.name}: ${t.message}")
+            appendLine("ERROR: ${cause.javaClass.name}: ${cause.message}")
             try {
-                organizer?.unregisterOrganizer()
+                if (organizer != null) {
+                    (unregisterMethod
+                        ?: organizer.javaClass.getMethod("unregisterOrganizer"))
+                        .invoke(organizer)
+                }
             } catch (_: Throwable) {
                 // Best-effort cleanup after a partial registration failure.
             }
