@@ -175,15 +175,23 @@ class WindowlessHostProbeActivity : Activity(), SurfaceHolder.Callback {
                 setTextColor(Color.WHITE)
                 gravity = Gravity.CENTER
             }
+            val touchCount = TextView(this).apply {
+                text = "Touch count: 0"
+                textSize = 16f
+                setTextColor(Color.WHITE)
+                gravity = Gravity.CENTER
+                isClickable = false
+                isLongClickable = false
+            }
+            var tapCount = 0
             val button = Button(this).apply {
                 text = "Tap to verify input"
                 setOnClickListener {
-                    // Keep this callback deliberately minimal. Updating a second
-                    // TextView in the host Activity from an embedded-window input
-                    // callback coincided with repeat input ANRs on the test device.
-                    // A visual-only alpha change lets us isolate input dispatch
-                    // without cross-window UI work or an enabled-state transition.
-                    alpha = 0.65f
+                    // Update only Views owned by this embedded SurfaceControlViewHost.
+                    // Do not post UI work to the host Activity from this callback.
+                    tapCount += 1
+                    touchCount.text = "Touch count: $tapCount"
+                    alpha = if (alpha < 1f) 1f else 0.65f
                 }
             }
             content.addView(
@@ -192,6 +200,13 @@ class WindowlessHostProbeActivity : Activity(), SurfaceHolder.Callback {
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 )
+            )
+            content.addView(
+                touchCount,
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = dp(10) }
             )
             content.addView(
                 button,
