@@ -25,7 +25,8 @@ This is a process/package virtualization layer with Android's normal Activity/wi
 ## Stage 0 — SurfaceView embedding plumbing
 
 An isolated helper was added at
-`Bcore/src/main/java/top/niunaijun/blackbox/surface/SurfaceViewEmbedder.java`.
+`Bcore/src/main/java/top/niunaijun/blackbox/surface/SurfaceViewEmbedder.java`, with a manual host test at
+`app/src/main/java/top/niunaijun/blackboxa/view/surface/SurfaceEmbeddingProbeActivity.kt`.
 
 It attempts to:
 1. Require an attached, measured host `SurfaceView` with a valid display and host token.
@@ -36,7 +37,10 @@ It attempts to:
 Important limits:
 - This helper embeds an ordinary supplied `View`; it does **not** embed a Guest Activity.
 - The `setView(View, int, int)` entry point is accessed reflectively because it is not part of the normal public SDK surface in the targeted SDK. Android 14 hidden-API enforcement may reject it.
-- No host Activity/demo screen has been wired yet.
+- A dedicated manual probe Activity is registered under action
+  `top.niunaijun.blackbox.action.SURFACE_EMBED_PROBE`; it hosts a SurfaceView and
+  attempts to embed a TextView/Button hierarchy. This Activity itself is a normal
+  top-level host window, so it does not satisfy the Guest Activity containment gate.
 - This change has not been compiled or run on a device. It is a probe, not a passing result.
 
 Stage 0 passes only after a build and a device test show a real View rendered inside the host SurfaceView, with no separate top-level window. Even then, Gate A still requires replacing the supplied View with the actual Guest Activity decor and proving Activity window/lifecycle ownership.
