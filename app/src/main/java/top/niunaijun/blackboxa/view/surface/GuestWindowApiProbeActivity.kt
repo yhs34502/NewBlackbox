@@ -116,7 +116,6 @@ class GuestWindowApiProbeActivity : Activity() {
     private fun StringBuilder.inspectRegularOrganizerRegistration() {
         appendLine("=== NON-SYSTEM TASKFRAGMENT ORGANIZER REGISTRATION ===")
         var organizer: Any? = null
-        var unregisterMethod: java.lang.reflect.Method? = null
         try {
             val organizerClass = Class.forName("android.window.TaskFragmentOrganizer")
             val executor = Executor { command ->
@@ -125,7 +124,7 @@ class GuestWindowApiProbeActivity : Activity() {
             val constructor = organizerClass.getConstructor(Executor::class.java)
             organizer = constructor.newInstance(executor)
             val registerMethod = organizerClass.getMethod("registerOrganizer")
-            unregisterMethod = organizerClass.getMethod("unregisterOrganizer")
+            val unregisterMethod = organizerClass.getMethod("unregisterOrganizer")
 
             registerMethod.invoke(organizer)
             appendLine("registerOrganizer(): PASS")
@@ -138,9 +137,7 @@ class GuestWindowApiProbeActivity : Activity() {
             appendLine("ERROR: ${cause.javaClass.name}: ${cause.message}")
             try {
                 if (organizer != null) {
-                    (unregisterMethod
-                        ?: organizer.javaClass.getMethod("unregisterOrganizer"))
-                        .invoke(organizer)
+                    organizer.javaClass.getMethod("unregisterOrganizer").invoke(organizer)
                 }
             } catch (_: Throwable) {
                 // Best-effort cleanup after a partial registration failure.
