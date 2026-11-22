@@ -161,7 +161,11 @@ class WindowlessHostProbeActivity : Activity(), SurfaceHolder.Callback {
             viewHost = createdHost
             append("PASS: SurfaceControlViewHost(Context, Display, hostToken) constructed")
 
-            val content = FrameLayout(this).apply {
+            // Use a vertical container so the status title and input button
+            // occupy separate rows instead of overlapping at FrameLayout's origin.
+            val content = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_HORIZONTAL
                 setBackgroundColor(Color.rgb(24, 55, 42))
                 setPadding(24, 24, 24, 24)
             }
@@ -184,17 +188,17 @@ class WindowlessHostProbeActivity : Activity(), SurfaceHolder.Callback {
             }
             content.addView(
                 title,
-                FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                    FrameLayout.LayoutParams.WRAP_CONTENT
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
                 )
             )
             content.addView(
                 button,
-                FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                    FrameLayout.LayoutParams.WRAP_CONTENT
-                )
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = dp(16) }
             )
 
             val setView = SurfaceControlViewHost::class.java.getDeclaredMethod(
