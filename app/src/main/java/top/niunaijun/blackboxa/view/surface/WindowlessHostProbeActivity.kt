@@ -12,6 +12,7 @@ import android.view.SurfaceView
 import android.view.View
 import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import java.lang.reflect.InvocationTargetException
@@ -46,7 +47,11 @@ class WindowlessHostProbeActivity : Activity(), SurfaceHolder.Callback {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val root = FrameLayout(this)
+        // Keep the log panel and host SurfaceView in separate vertical regions.
+        // The log must never overlay the embedded SurfacePackage or its touch target.
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
         hostSurface = SurfaceView(this)
         reportView = TextView(this).apply {
             textSize = 12f
@@ -55,13 +60,6 @@ class WindowlessHostProbeActivity : Activity(), SurfaceHolder.Callback {
             setPadding(18, 14, 18, 14)
             setTextIsSelectable(true)
         }
-        root.addView(
-            hostSurface,
-            FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
-        )
         reportScroll = ScrollView(this).apply {
             addView(reportView)
             visibility = View.GONE
@@ -96,10 +94,17 @@ class WindowlessHostProbeActivity : Activity(), SurfaceHolder.Callback {
         }
         root.addView(
             reportPanel,
-            FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                dp(48),
-                Gravity.TOP
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(48)
+            )
+        )
+        root.addView(
+            hostSurface,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
+                1f
             )
         )
         setContentView(root)
@@ -219,9 +224,10 @@ class WindowlessHostProbeActivity : Activity(), SurfaceHolder.Callback {
         reportExpanded = expanded
         reportScroll.visibility = if (expanded) View.VISIBLE else View.GONE
         reportToggle.text = if (expanded) "Hide Log" else "Show Log"
-        reportPanel.layoutParams = reportPanel.layoutParams.apply {
-            height = dp(if (expanded) 220 else 48)
-        }
+        reportPanel.layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            dp(if (expanded) 220 else 48)
+        )
     }
 
     private fun dp(value: Int): Int =
