@@ -4,9 +4,12 @@ import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.SurfaceControlViewHost
 import android.widget.ScrollView
 import android.widget.TextView
+import android.window.TaskFragmentOrganizer
 
 /**
  * Platform capability inventory for a future Guest Activity embedding path.
@@ -35,6 +38,7 @@ class GuestWindowApiProbeActivity : Activity() {
             inspectClass("android.window.TaskFragmentOrganizer")
             inspectActivityAttach()
             inspectEmbeddingPermission()
+            inspectRegularOrganizerRegistration()
 
             appendLine("=== CURRENT POC BOUNDARY ===")
             appendLine("SurfaceControlViewHost hosts a View hierarchy, not an Activity instance.")
