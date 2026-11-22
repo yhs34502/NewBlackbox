@@ -1,6 +1,6 @@
 # Guest Surface Runtime POC
 
-Status: isolated investigation branch; runtime implementation has not started.
+Status: isolated investigation branch; Stage-2 Windowless Host probe added, pending build and device execution.
 
 Base revision: `89b59836c66f173756a4ae258cf379a957649820`
 
@@ -71,6 +71,27 @@ windowless guest Activity attach path, then prove the real guest Activity decor
 renders inside the host SurfaceView. A normal Activity launch or a synthetic View
 does not pass that gate.
 
+## Stage 2 — Windowless host construction probe
+
+Added `WindowlessHostProbeActivity` at
+`app/src/main/java/top/niunaijun/blackboxa/view/surface/WindowlessHostProbeActivity.kt`
+and registered action
+`top.niunaijun.blackbox.action.WINDOWLESS_HOST_PROBE`.
+
+This probe uses the Android 14 API signatures observed on the Samsung SM-A528B:
+1. Reads the host SurfaceView Display, host Binder token and its SurfaceControl.
+2. Reflectively constructs `WindowlessWindowManager(Configuration, SurfaceControl, IBinder)`.
+3. Constructs `SurfaceControlViewHost(Context, Display, WindowlessWindowManager, String)`.
+4. Calls `setView(View, int, int)`, obtains the SurfacePackage, and attempts to attach it to the host SurfaceView.
+5. Displays a step-by-step PASS/FAIL report and releases the SurfaceControlViewHost when the host surface is destroyed.
+
+This remains a synthetic View probe. It does not instantiate or attach a Guest Activity. In particular, successful construction is not sufficient: the device test must show the embedded content and confirm the touch button responds. Hidden-API enforcement, invalid SurfaceControl parenting, or SurfacePackage attachment may still fail on the target firmware.
+
+Manual launch:
+`adb shell am start -n <host.package>/top.niunaijun.blackboxa.view.surface.WindowlessHostProbeActivity`
+
+Collect the on-screen report or Logcat tag `WindowlessHostProbe`. The first failing step and full exception determine the next adapter change. Do not proceed to Activity.attach integration until this probe demonstrates a visible, touch-responsive View.
+
 ## POC architecture to prove
 
 The work is split into explicit proof gates. Do not connect this runtime to Mereview's production Clone/MereviewSpace routes until every gate passes.
@@ -119,5 +140,5 @@ Test in this order:
 
 - Isolated branch created from the exact pinned NewBlackbox revision.
 - Source audit confirms no existing `GuestSurfaceRuntime`, `IGuestSurfaceCallback`, or `SurfaceControlViewHost` implementation in this revision.
-- No runtime source changes, build, or device test have been made yet.
-- Next implementation task: prototype window attachment in a dedicated test host, first proving whether a real guest Activity decor can be hosted without a top-level Activity launch.
+- Stage-2 Windowless Host probe source and manifest registration are committed; no build or device test result exists yet.
+- Next task: build this branch, run WindowlessHostProbeActivity on the SM-A528B, and use its first failing step or touch-test result to decide whether the WWM-backed SurfaceControlViewHost path is viable.
