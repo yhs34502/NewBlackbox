@@ -24,6 +24,14 @@
         android:enableOnBackInvokedCallback="true"
         tools:targetApi="n">
         <activity
+            android:name=".view.surface.GuestWindowApiProbeActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="top.niunaijun.blackbox.action.GUEST_WINDOW_API_PROBE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
             android:name=".view.surface.SurfaceEmbeddingProbeActivity"
             android:exported="true">
             <intent-filter>
