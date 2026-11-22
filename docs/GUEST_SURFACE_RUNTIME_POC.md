@@ -1,6 +1,6 @@
 # Guest Surface Runtime POC
 
-Status: isolated investigation branch; Stage-2 Windowless Host probe added, pending build and device execution.
+Status: isolated investigation branch; the WWM-backed Stage-2 path is disabled after repeat SurfaceFlinger crashes. The probe now uses the host-token SurfaceControlViewHost constructor; rebuild and controlled device validation are pending.
 
 Base revision: `89b59836c66f173756a4ae258cf379a957649820`
 
@@ -142,3 +142,42 @@ Test in this order:
 - Source audit confirms no existing `GuestSurfaceRuntime`, `IGuestSurfaceCallback`, or `SurfaceControlViewHost` implementation in this revision.
 - Stage-2 Windowless Host probe source and manifest registration are committed; no build or device test result exists yet.
 - Next task: build this branch, run WindowlessHostProbeActivity on the SM-A528B, and use its first failing step or touch-test result to decide whether the WWM-backed SurfaceControlViewHost path is viable.
+
+
+## Stage-2 incident review — WWM-backed path disabled
+
+Device evidence supplied for the Samsung SM-A528B (Android 14 / API 34):
+
+- `/proc/uptime` increased from 9687.60 to 9739.12 seconds across the two checks. This rules out a kernel reboot during that observation interval; the user's brief Samsung logo / lock-screen transition is consistent with a system-process restart, not proof of a full kernel reboot.
+- Bugreport tombstones show three SurfaceFlinger crashes at the times associated with the three probe launches. Each SurfaceFlinger tombstone reports SIGSEGV and stack overflow in repeated recursive frames of `android::Layer::setGameModeForTree(android::gui::GameMode)`.
+- GNSS HIDL service tombstones report `DEAD_OBJECT` shortly after the SurfaceFlinger crashes. These appear to be secondary fallout; this is not established as the initiating fault.
+- A later zygote64 tombstone reports a null-pointer dereference. Its relationship to the SurfaceFlinger failures is not established.
+
+The former Stage-2 implementation explicitly constructed
+`WindowlessWindowManager(Configuration, hostSurface.surfaceControl, hostSurface.hostToken)`,
+then created a `SurfaceControlViewHost` using that manager, and finally attached its
+`SurfacePackage` back to the same `hostSurface` with
+`setChildSurfacePackage()`. This parent/attachment combination is now treated as
+unsafe on the tested Samsung firmware. The exact internal SurfaceFlinger defect
+cannot be proven from the tombstone alone, but the repeated temporal correlation
+and recursive Layer stack make this path unsuitable for further device testing.
+
+### Safety change
+
+`WindowlessHostProbeActivity` has been changed to use only
+`SurfaceControlViewHost(Context, Display, hostToken)`. It no longer reads
+`SurfaceView.surfaceControl`, constructs a `WindowlessWindowManager`, or
+passes an explicit SurfaceControl parent. Android owns the host-token window
+relationship. The probe still embeds only a synthetic View and does not prove
+Guest Activity embedding.
+
+Do not re-enable the WWM-backed constructor/parent path on the SM-A528B. Do not
+run the previous APK containing that implementation. Rebuild from the updated
+branch before any further test. If the safe host-token probe also causes a
+system-process crash, stop device testing and inspect the new tombstone before
+changing the implementation again.
+
+The next gate is a build followed by one controlled launch of the updated
+host-token probe. Require a visible synthetic View and a successful touch test;
+a PASS log without visible rendering and input is insufficient. Guest Activity
+attachment remains a separate, unproven gate.
