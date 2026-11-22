@@ -107,6 +107,36 @@ class GuestWindowApiProbeActivity : Activity() {
         appendLine()
     }
 
+    /**
+     * The no-argument registration is distinct from privileged system-organizer
+     * registration. Test only register/unregister; do not create or move tasks.
+     */
+    private fun StringBuilder.inspectRegularOrganizerRegistration() {
+        appendLine("=== NON-SYSTEM TASKFRAGMENT ORGANIZER REGISTRATION ===")
+        var organizer: TaskFragmentOrganizer? = null
+        try {
+            organizer = TaskFragmentOrganizer(
+                java.util.concurrent.Executor { command ->
+                    Handler(Looper.getMainLooper()).post(command)
+                }
+            )
+            organizer.registerOrganizer()
+            appendLine("registerOrganizer(): PASS")
+            organizer.unregisterOrganizer()
+            appendLine("unregisterOrganizer(): PASS")
+            appendLine("No TaskFragment was created and no Activity was moved.")
+        } catch (t: Throwable) {
+            appendLine("REGISTRATION: FAIL")
+            appendLine("ERROR: ${t.javaClass.name}: ${t.message}")
+            try {
+                organizer?.unregisterOrganizer()
+            } catch (_: Throwable) {
+                // Best-effort cleanup after a partial registration failure.
+            }
+        }
+        appendLine()
+    }
+
     private fun StringBuilder.inspectEmbeddingPermission() {
         appendLine("=== TASK EMBEDDING PERMISSION ===")
         val permission = "android.permission.MANAGE_ACTIVITY_TASKS"
